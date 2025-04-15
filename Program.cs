@@ -1,7 +1,5 @@
-﻿using Spectre.Console;
+using Spectre.Console;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 
 public class Program{
     public static readonly string PATH = Environment.CurrentDirectory + "/tareas.todo";
@@ -41,21 +39,25 @@ public class Program{
                     Guardar(td);
                     break;
                 case "salir":
-                    exit = true;
+                    AnsiConsole.Clear();
+                    AnsiConsole.Write(new Panel("[red bold]Confirmar operación[/]").Border(BoxBorder.Heavy).BorderColor(Color.Yellow).Header("[red bold]Advertencia[/]"));
+                    if(AnsiConsole.Confirm("[black bold on red]¿Seguro que quieres salir?[/]", false))
+                        exit = true;
                     break;
                 default:
                     err = true;
                     break;
             }
         }
+        AnsiConsole.Clear();
         AnsiConsole.MarkupLine("[yellow bold]Adiós[/]");
     }
 
     public static void Nuevo(ToDo todo){
         string name = AnsiConsole.Ask<string>("[bold]Nombre: [/]");
-        string fechahora = AnsiConsole.Ask<string>("[bold]Fecha y hora [[Opcional. Formato dd/mm/aaaa hh:mm:ss]]: [/]", "null");
-        DateTime dt = new();
-        if(!DateTime.TryParse(fechahora, out  dt))
+        string fechahora = AnsiConsole.Ask<string>("[bold]Fecha y hora [[Formato dd/mm/aaaa hh:mm:ss]]: [/]", DateTime.Now.ToString());
+        DateTime dt;
+        if(!DateTime.TryParse(fechahora, out dt))
         {
             AnsiConsole.MarkupLine("[red bold]Formato incorrecto[/]");
             Thread.Sleep(2000);
@@ -66,10 +68,7 @@ public class Program{
     }
 
     public static void Borrar(ToDo todo){
-askname:
         string name = AnsiConsole.Ask<string>("[bold]Nombre: [/]");
-        if(name == "")
-            goto askname;
         todo.Remove(name);
     }
 
@@ -82,6 +81,7 @@ askname:
         foreach(string[] l in todo.GetTareasStrings())
             table.AddRow(l);
         table.Title = new TableTitle("Tareas");
+        table.RoundedBorder();
         AnsiConsole.Write(table);
     }
 }
@@ -118,6 +118,7 @@ public class ToDo{
 
     public void Load(FileStream file){
         tareas = JsonSerializer.Deserialize<List<Tarea>>(file) ?? tareas;
+        file.Close();
     }
 
     public void Save(string path){
